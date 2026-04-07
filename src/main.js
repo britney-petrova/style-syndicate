@@ -18,24 +18,24 @@ let rows = Math.floor(canvas.height / TILE_SIZE);
 
 
 // =========================
-// 🖱️ INPUT TRACKING
-// =========================
-let mouseX = 0;
-let mouseY = 0;
-
-
-// =========================
 // 🧩 GAME STATE
 // =========================
-
-// 0 = empty
-// 1 = rack
-// 2 = plant
-// 3 = counter
 let grid = [];
-
-// selected object type
 let selectedObject = 1;
+
+
+// =========================
+// 🖼️ LOAD SPRITES
+// =========================
+const sprites = {
+  1: new Image(), // rack
+  2: new Image(), // plant
+  3: new Image()  // counter
+};
+
+sprites[1].src = "assets/rack.png";
+sprites[2].src = "assets/plant.png";
+sprites[3].src = "assets/counter.png";
 
 
 // =========================
@@ -55,7 +55,7 @@ createGrid();
 
 
 // =========================
-// 🔄 RESIZE HANDLING
+// 🔄 RESIZE
 // =========================
 window.addEventListener("resize", () => {
   canvas.width = window.innerWidth;
@@ -69,101 +69,31 @@ window.addEventListener("resize", () => {
 
 
 // =========================
-// 🧭 UI SYSTEM
+// 🖱️ INPUT
 // =========================
-
-// UI bar settings
-const UI_HEIGHT = 100;
-
-const uiButtons = [
-  { id: 1, label: "Rack", color: "#ff69b4" },
-  { id: 2, label: "Plant", color: "#4CAF50" },
-  { id: 3, label: "Counter", color: "#FFD700" }
-];
-
-
-// =========================
-// 🖱️ INPUT EVENTS
-// =========================
-
-// track mouse movement
-canvas.addEventListener("mousemove", (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-});
-
-// handle click (UI + grid)
 canvas.addEventListener("click", (e) => {
-  const clickX = e.clientX;
-  const clickY = e.clientY;
+  const x = e.clientX;
+  const y = e.clientY;
 
-  // check if clicking UI
-  if (clickY > canvas.height - UI_HEIGHT) {
-    handleUIClick(clickX, clickY);
+  if (y > canvas.height - 100) {
+    handleUIClick(x);
     return;
   }
 
-  // otherwise place on grid
-  const gridX = Math.floor(clickX / TILE_SIZE);
-  const gridY = Math.floor(clickY / TILE_SIZE);
+  const gridX = Math.floor(x / TILE_SIZE);
+  const gridY = Math.floor(y / TILE_SIZE);
 
   if (grid[gridX] && grid[gridX][gridY] !== undefined) {
-    if (grid[gridX][gridY] === 0) {
-      grid[gridX][gridY] = selectedObject;
-    } else {
-      grid[gridX][gridY] = 0;
-    }
-  }
-});
-
-// touch support
-canvas.addEventListener("touchstart", (e) => {
-  const touch = e.touches[0];
-
-  const clickX = touch.clientX;
-  const clickY = touch.clientY;
-
-  if (clickY > canvas.height - UI_HEIGHT) {
-    handleUIClick(clickX, clickY);
-    return;
-  }
-
-  const gridX = Math.floor(clickX / TILE_SIZE);
-  const gridY = Math.floor(clickY / TILE_SIZE);
-
-  if (grid[gridX] && grid[gridX][gridY] !== undefined) {
-    if (grid[gridX][gridY] === 0) {
-      grid[gridX][gridY] = selectedObject;
-    } else {
-      grid[gridX][gridY] = 0;
-    }
+    grid[gridX][gridY] = grid[gridX][gridY] === 0 ? selectedObject : 0;
   }
 });
 
 
 // =========================
-// 🧭 UI LOGIC
+// 🎨 DRAW GRID
 // =========================
-function handleUIClick(x, y) {
-  const buttonWidth = canvas.width / uiButtons.length;
-
-  const index = Math.floor(x / buttonWidth);
-  const button = uiButtons[index];
-
-  if (button) {
-    selectedObject = button.id;
-  }
-}
-
-
-// =========================
-// 🎨 RENDERING
-// =========================
-
-// draw grid
 function drawGrid() {
   ctx.strokeStyle = "#333";
-  ctx.lineWidth = 1;
 
   for (let x = 0; x < cols; x++) {
     for (let y = 0; y < rows; y++) {
@@ -178,90 +108,81 @@ function drawGrid() {
 }
 
 
-// draw placed objects
+// =========================
+// 🖼️ DRAW OBJECTS (SPRITES)
+// =========================
 function drawObjects() {
   for (let x = 0; x < cols; x++) {
     for (let y = 0; y < rows; y++) {
       const tile = grid[x][y];
 
       if (tile !== 0) {
-        if (tile === 1) ctx.fillStyle = "#ff69b4";
-        if (tile === 2) ctx.fillStyle = "#4CAF50";
-        if (tile === 3) ctx.fillStyle = "#FFD700";
+        const img = sprites[tile];
 
-        ctx.fillRect(
-          x * TILE_SIZE,
-          y * TILE_SIZE,
-          TILE_SIZE,
-          TILE_SIZE
-        );
+        if (img.complete) {
+          ctx.drawImage(
+            img,
+            x * TILE_SIZE,
+            y * TILE_SIZE,
+            TILE_SIZE,
+            TILE_SIZE
+          );
+        }
       }
     }
   }
 }
 
 
-// highlight tile (not over UI)
-function highlightTile() {
-  if (mouseX === 0 && mouseY === 0) return;
+// =========================
+// 🧭 UI
+// =========================
+const uiButtons = [
+  { id: 1, label: "Rack" },
+  { id: 2, label: "Plant" },
+  { id: 3, label: "Counter" }
+];
 
-  // don't highlight over UI
-  if (mouseY > canvas.height - UI_HEIGHT) return;
+function handleUIClick(x) {
+  const width = canvas.width / uiButtons.length;
+  const index = Math.floor(x / width);
 
-  const gridX = Math.floor(mouseX / TILE_SIZE);
-  const gridY = Math.floor(mouseY / TILE_SIZE);
-
-  if (gridX < 0 || gridX >= cols || gridY < 0 || gridY >= rows) return;
-
-  ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-  ctx.fillRect(
-    gridX * TILE_SIZE,
-    gridY * TILE_SIZE,
-    TILE_SIZE,
-    TILE_SIZE
-  );
+  if (uiButtons[index]) {
+    selectedObject = uiButtons[index].id;
+  }
 }
 
-
-// draw UI bar
 function drawUI() {
-  // background
+  const UI_HEIGHT = 100;
+
   ctx.fillStyle = "#222";
   ctx.fillRect(0, canvas.height - UI_HEIGHT, canvas.width, UI_HEIGHT);
 
-  const buttonWidth = canvas.width / uiButtons.length;
+  const width = canvas.width / uiButtons.length;
 
-  uiButtons.forEach((button, index) => {
-    const x = index * buttonWidth;
+  uiButtons.forEach((btn, i) => {
+    const x = i * width;
     const y = canvas.height - UI_HEIGHT;
 
-    // highlight selected
-    if (selectedObject === button.id) {
+    if (selectedObject === btn.id) {
       ctx.fillStyle = "#444";
-      ctx.fillRect(x, y, buttonWidth, UI_HEIGHT);
+      ctx.fillRect(x, y, width, UI_HEIGHT);
     }
 
-    // icon
-    ctx.fillStyle = button.color;
-    ctx.fillRect(x + 20, y + 20, 40, 40);
-
-    // label
     ctx.fillStyle = "white";
-    ctx.font = "14px Arial";
-    ctx.fillText(button.label, x + 20, y + 80);
+    ctx.fillText(btn.label, x + 20, y + 60);
   });
 }
 
 
 // =========================
-// 🔁 GAME LOOP
+// 🔁 LOOP
 // =========================
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   drawGrid();
   drawObjects();
-  highlightTile();
   drawUI();
 
   requestAnimationFrame(gameLoop);
