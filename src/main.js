@@ -93,7 +93,7 @@ canvas.addEventListener("click", (e) => {
 // 🎨 DRAW GRID
 // =========================
 function drawGrid() {
-  ctx.strokeStyle = "#333";
+  ctx.strokeStyle = "#2a2a2a";
 
   for (let x = 0; x < cols; x++) {
     for (let y = 0; y < rows; y++) {
@@ -120,11 +120,31 @@ function drawObjects() {
         const img = sprites[tile];
 
         if (img.complete) {
+          const baseX = x * TILE_SIZE;
+          const baseY = y * TILE_SIZE;
+
+          // === SHADOW ===
+          ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+          ctx.beginPath();
+          ctx.ellipse(
+            baseX + TILE_SIZE / 2,
+            baseY + TILE_SIZE - 6,
+            TILE_SIZE / 3,
+            TILE_SIZE / 6,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+
+          // === OBJECT (lifted slightly) ===
+          const lift = 10;
+
           ctx.drawImage(
             img,
-            x * TILE_SIZE,
-            y * TILE_SIZE,
-            TILE_SIZE,
+            baseX + 4,
+            baseY - lift,
+            TILE_SIZE - 8,
             TILE_SIZE
           );
         }
